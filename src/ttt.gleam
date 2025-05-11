@@ -1,4 +1,5 @@
 import gleam/dict.{type Dict}
+import gleam/function
 import gleam/http/request
 import gleam/http/response
 import gleam/int
@@ -32,6 +33,59 @@ pub fn handle_request(req: wisp.Request) -> wisp.Response {
     ["reset"] -> handle_reset(req)
     _ -> wisp.not_found()
   }
+}
+
+type GameState {
+  Win(Player)
+  Tie
+  Ongoing
+}
+
+fn check_board_win(board: Board) -> GameState {
+  let row_indices = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+  let col_indices = [[0, 3, 6], [1, 4, 7], [2, 5, 8]]
+  let diag_indices = [[0, 4, 8], [2, 4, 6]]
+
+  let all_indices =
+    list.append(row_indices, col_indices)
+    |> list.append(diag_indices)
+
+  let check_win = fn(player: Player, indices: List(Int)) -> Bool {
+    indices
+    |> list.all(fn(i) {
+      case dict.get(board, i) {
+        Ok(Occupied(p)) if p == player -> True
+        _ -> False
+      }
+    })
+  }
+
+  let check_win = fn(player: Player) -> Bool {
+    all_indices
+    |> list.map(check_win(player, _))
+    |> list.any(function.identity)
+  }
+
+  case check_win(X), check_win(O) {
+    True, _ -> Win(X)
+    _, True -> Win(O)
+    _, _ -> {
+      case check_full(board) {
+        True -> Tie
+        False -> Ongoing
+      }
+    }
+  }
+}
+
+fn check_full(board: Board) -> Bool {
+  list.range(0, 8)
+  |> list.all(fn(index) {
+    case dict.get(board, index) {
+      Ok(Occupied(_)) -> True
+      _ -> False
+    }
+  })
 }
 
 fn make_cell_from_form_cell(form_value: String) -> Cell {

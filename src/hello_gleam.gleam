@@ -15,13 +15,6 @@ pub fn main() -> Nil {
     |> mist.new
     |> mist.port(3030)
     |> mist.start_http
-  // let result =
-  //   handle_request
-  //   |> mist.new
-  //   |> mist.port(3030)
-  //   |> mist.start_http
-
-  // let assert Ok(_) = result
 
   process.sleep_forever()
 }
