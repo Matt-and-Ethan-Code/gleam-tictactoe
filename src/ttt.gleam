@@ -26,7 +26,7 @@ pub fn handle_request(req: wisp.Request) -> wisp.Response {
         {
           let board_html = draw_board(board)
           let result_text = get_winner_text(board)
-          html.div([], [board_html, result_text])
+          html.div([attr.id("page")], [board_html, result_text])
         }
         |> nakai.to_string_tree
         |> wisp.Text
@@ -85,11 +85,12 @@ fn check_board_win(board: Board) -> GameState {
 fn get_winner_text(board: Board) -> html.Node {
   let game_state: GameState = check_board_win(board)
   case game_state {
-    Ongoing -> html.Text("")
-    Tie -> html.Text("Tie")
-    Win(X) -> html.Text("X Wins")
-    Win(O) -> html.Text("O Wins")
+    Ongoing -> ""
+    Tie -> "Tie"
+    Win(X) -> "X Wins"
+    Win(O) -> "O Wins"
   }
+  |> html.span_text([attr.class("win-text")], _)
 }
 
 fn check_full(board: Board) -> Bool {
