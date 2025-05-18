@@ -23,7 +23,11 @@ pub fn handle_request(req: wisp.Request) -> wisp.Response {
     [] -> {
       let board = get_board_from_cookie(req)
       let body: wisp.Body =
-        draw_board(board)
+        {
+          let board_html = draw_board(board)
+          let result_text = get_winner_text(board)
+          html.div([], [board_html, result_text])
+        }
         |> nakai.to_string_tree
         |> wisp.Text
       wisp.response(200)
@@ -78,6 +82,16 @@ fn check_board_win(board: Board) -> GameState {
   }
 }
 
+fn get_winner_text(board: Board) -> html.Node {
+  let game_state: GameState = check_board_win(board)
+  case game_state {
+    Ongoing -> html.Text("")
+    Tie -> html.Text("Tie")
+    Win(X) -> html.Text("X Wins")
+    Win(O) -> html.Text("O Wins")
+  }
+}
+
 fn check_full(board: Board) -> Bool {
   list.range(0, 8)
   |> list.all(fn(index) {
@@ -109,9 +123,12 @@ fn handle_move(req: wisp.Request) -> wisp.Response {
   let assert [#(cell_id, cell_value)] = form.values
 
   let current_cell = make_cell_from_form_cell(cell_value)
-  case current_cell {
-    Occupied(_) -> wisp.redirect("/")
-    Empty -> {
+  let game_state = check_board_win(board)
+  case current_cell, game_state {
+    _, Win(_) -> wisp.redirect("/")
+    _, Tie -> wisp.redirect("/")
+    Occupied(_), Ongoing -> wisp.redirect("/")
+    Empty, Ongoing -> {
       let assert Ok(index_to_move) = int.parse(cell_id)
       let new_board = dict.insert(board, index_to_move, Occupied(next_player))
       wisp.redirect("/")
